@@ -29,15 +29,15 @@ jobs:
         with:
           update: true
           # Target platform
-          platform: x64 # optional, default is x64
+          #platform: x64 # optional, default is x64
           # Install Cygwin packages
-          cygwin: 0 # optional, default is 0
+          #cygwin: 0 # optional, default is 0
           # Enable static linking workaround
-          static: 0 # optional, default is 1
+          #static: 0 # optional, default is 1
           # Set up cc/c++ executables
-          cc: 1 # optional, default is 1
+          #cc: 1 # optional, default is 1
           # On Cygwin, replace executable symlinks with hardlinks
-          hardlinks: 1 # optional, default is 0
+          #hardlinks: 1 # optional, default is 0
           install: >-
             base-devel
             mingw-w64-x86_64-{toolchain,openssl}
