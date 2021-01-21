@@ -133,9 +133,10 @@ int
 Base32Decode(const char *input, void **output)
 {
     const char* end = strchr(input, '=');
-    DWORD in_len = end ? (end - input) : strlen(input);
+    DWORD in_len = end ? end - input : strlen(input);
     DWORD len = in_len * 5 / 8; // this must be TRUNCATED
     DWORD inputIndex;
+    DWORD arrayIndex = 0;
     BYTE bitsRemaining = 8;
 
     BYTE* returnArray = malloc(len + 1);;
@@ -163,13 +164,13 @@ Base32Decode(const char *input, void **output)
         }
         if (bitsRemaining > 5)
         {
-            BYTE mask = ch << (bitsRemaining - 5);
+            BYTE mask = ch << bitsRemaining - 5;
             *returnArray |= mask;
             bitsRemaining -= 5;
         }
         else
         {
-            DWORD mask = ch << (3 + bitsRemaining);
+            DWORD mask = ch << 3 + bitsRemaining;
             *returnArray++ |= mask >> 8;
             *returnArray = mask;
             bitsRemaining += 3;

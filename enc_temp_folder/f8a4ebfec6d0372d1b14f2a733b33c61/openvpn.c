@@ -1279,11 +1279,7 @@ format_bytecount(wchar_t *buf, size_t len, unsigned long long c)
  */
 void OnByteCount(connection_t *c, char *msg)
 {
-#ifdef _MSC_VER
     if (!msg || sscanf(msg, "%I64u,%I64u", &c->bytes_in, &c->bytes_out) != 2)
-#else
-    if (!msg || sscanf(msg, "%I64llu,%I64llu", &c->bytes_in, &c->bytes_out) != 2)
-    #endif
         return;
     wchar_t in[32], out[32];
     format_bytecount(in, _countof(in), c->bytes_in);
