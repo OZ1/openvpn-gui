@@ -433,6 +433,9 @@ UserAuthDialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
     auth_param_t *param;
     WCHAR username[USER_PASS_LEN] = L"";
     WCHAR password[USER_PASS_LEN] = L"";
+    char  totp_key[USER_PASS_LEN] = "";
+    BOOL translated = FALSE;
+    DWORD otp;
 
     switch (msg)
     {
@@ -460,36 +463,43 @@ UserAuthDialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
                 SendMessage(wnd_challenge, EM_SETPASSWORDCHAR, 0, 0);
 
         }
-        if (RecallUsername(param->c->config_name, username))
+        if (RecallUsername(param->c->config_name, username, sizeof(username)))
         {
             SetDlgItemTextW(hwndDlg, ID_EDT_AUTH_USER, username);
             SetFocus(GetDlgItem(hwndDlg, ID_EDT_AUTH_PASS));
         }
-        if (RecallAuthPass(param->c->config_name, password))
+        if (RecallAuthPass(param->c->config_name, password, sizeof(password)))
         {
             SetDlgItemTextW(hwndDlg, ID_EDT_AUTH_PASS, password);
-            if (username[0] != L'\0' && !(param->flags & FLAG_CR_TYPE_SCRV1)
-                && password[0] != L'\0' && param->c->failed_auth_attempts == 0)
-            {
-               /* user/pass available and no challenge response needed: skip dialog
-                * if silent_connection is on, else auto submit after a few seconds.
-                * User can interrupt.
-                */
-                SetFocus(GetDlgItem(hwndDlg, IDOK));
-                UINT timeout = o.silent_connection ? 0 : 6; /* in seconds */
-                AutoCloseSetup(hwndDlg, IDOK, timeout, ID_TXT_WARNING, IDS_NFO_AUTO_CONNECT);
-            }
-            /* if auth failed, highlight password so that user can type over */
-            else if (param->c->failed_auth_attempts)
-            {
-                SendMessage(GetDlgItem(hwndDlg, ID_EDT_AUTH_PASS), EM_SETSEL, 0, MAKELONG(0,-1));
-            }
-            else if (param->flags & FLAG_CR_TYPE_SCRV1)
-            {
-                SetFocus(GetDlgItem(hwndDlg, ID_EDT_AUTH_CHALLENGE));
-            }
-            SecureZeroMemory(password, sizeof(password));
+            SetFocus(GetDlgItem(hwndDlg, ID_EDT_AUTH_TOKEN));
         }
+        if (RecallTotpPass(param->c->config_name, totp_key, sizeof(totp_key)))
+        {
+            SetDlgItemTextA(hwndDlg, ID_EDT_AUTH_TOTP, totp_key);
+        }
+        if (username[0] != L'\0' && !(param->flags & FLAG_CR_TYPE_SCRV1) &&
+            password[0] != L'\0' && param->c->failed_auth_attempts == 0 &&
+            totp_key[0] !=  '\0')
+        {
+            /* user/pass available and no challenge response needed: skip dialog
+            * if silent_connection is on, else auto submit after a few seconds.
+            * User can interrupt.
+            */
+            SetFocus(GetDlgItem(hwndDlg, IDOK));
+            UINT timeout = o.silent_connection ? 0 : 6; /* in seconds */
+            AutoCloseSetup(hwndDlg, IDOK, timeout, ID_TXT_WARNING, IDS_NFO_AUTO_CONNECT);
+        }
+        /* if auth failed, highlight password so that user can type over */
+        else if (param->c->failed_auth_attempts)
+        {
+            SendMessage(GetDlgItem(hwndDlg, ID_EDT_AUTH_PASS), EM_SETSEL, 0, MAKELONG(0,-1));
+        }
+        else if (param->flags & FLAG_CR_TYPE_SCRV1)
+        {
+            SetFocus(GetDlgItem(hwndDlg, ID_EDT_AUTH_CHALLENGE));
+        }
+        SecureZeroMemory(password, sizeof(password));
+        SecureZeroMemory(totp_key, sizeof(totp_key));
         if (param->c->flags & FLAG_DISABLE_SAVE_PASS)
             ShowWindow(GetDlgItem (hwndDlg, ID_CHK_SAVE_PASS), SW_HIDE);
         else if (param->c->flags & FLAG_SAVE_AUTH_PASS)
@@ -524,10 +534,10 @@ UserAuthDialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
                 int len = Edit_GetTextLength((HWND) lParam);
                 EnableWindow(GetDlgItem(hwndDlg, IDOK), (len ? TRUE : FALSE));
             }
-            AutoCloseCancel(hwndDlg); /* user interrupt */
-            break;
-
+            __fallthrough;
         case ID_EDT_AUTH_PASS:
+        case ID_EDT_AUTH_TOTP:
+        case ID_EDT_AUTH_TOKEN:
             AutoCloseCancel(hwndDlg); /* user interrupt */
             break;
 
@@ -561,17 +571,47 @@ UserAuthDialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
                     SecureZeroMemory(password, sizeof(password));
                     return 0;
                 }
-                if ( param->c->flags & FLAG_SAVE_AUTH_PASS && wcslen(password) )
+                if ( param->c->flags & FLAG_SAVE_AUTH_PASS && password[0] )
                 {
                     SaveAuthPass(param->c->config_name, password);
                 }
                 SecureZeroMemory(password, sizeof(password));
             }
+            if (GetDlgItemTextA(hwndDlg, ID_EDT_AUTH_TOTP, totp_key, _countof(totp_key)))
+            {
+                void* secret;
+                DWORD len = Base32Decode(totp_key, &secret);
+                if (len <= 0)
+                {
+                    show_error_tip(GetDlgItem(hwndDlg, ID_EDT_AUTH_TOTP), LoadLocalizedString(IDS_ERR_INVALID_TOTP_INPUT));
+                    SecureZeroMemory(totp_key, sizeof(totp_key));
+                    return 0;
+                }
+                if ( param->c->flags & FLAG_SAVE_AUTH_PASS && totp_key[0] )
+                {
+                    SaveTotpPass(param->c->config_name, totp_key);
+                }
+                SecureZeroMemory(totp_key, sizeof(totp_key));
+#ifndef DISABLE_CHANGE_PASSWORD
+                otp = GetOneTimePassword(secret, len);
+                translated = TRUE;
+#endif
+                SecureZeroMemory(secret, len);
+                free(secret);
+            }
+#ifndef DISABLE_CHANGE_PASSWORD
+            else
+#endif
+            {
+                otp = GetDlgItemInt(hwndDlg, ID_EDT_AUTH_TOKEN, &translated, FALSE);
+            }
             ManagementCommandFromInput(param->c, "username \"Auth\" \"%s\"", hwndDlg, ID_EDT_AUTH_USER);
             if (param->flags & FLAG_CR_TYPE_SCRV1)
                 ManagementCommandFromInputBase64(param->c, "password \"Auth\" \"SCRV1:%s:%s\"", hwndDlg, ID_EDT_AUTH_PASS, ID_EDT_AUTH_CHALLENGE);
+            else if (!translated)
+                ManagementCommandFromInput(param->c, "password \"Auth\" \"%s\"", hwndDlg, ID_EDT_AUTH_PASS);
             else
-                ManagementCommandFromInput2(param->c, "password \"Auth\" \"%s%s\"", hwndDlg, ID_EDT_AUTH_PASS, ID_EDT_AUTH_TOKEN);
+                ManagementCommandFromInputOtp(param->c, "password \"Auth\" \"%s%06u\"", hwndDlg, ID_EDT_AUTH_PASS, otp);
             EndDialog(hwndDlg, LOWORD(wParam));
             return TRUE;
 
@@ -759,7 +799,7 @@ PrivKeyPassDialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
         c = (connection_t *) lParam;
         SetProp(hwndDlg, cfgProp, (HANDLE) c);
         AppendTextToCaption (hwndDlg, c->config_name);
-        if (RecallKeyPass(c->config_name, passphrase) && wcslen(passphrase)
+        if (RecallKeyPass(c->config_name, passphrase, sizeof(passphrase)) && wcslen(passphrase)
             && c->failed_psw_attempts == 0)
         {
             /* Use the saved password and skip the dialog */

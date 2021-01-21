@@ -37,7 +37,7 @@ BEGIN
 END
 
 /* Auth Username/Password Dialog */
-ID_DLG_AUTH DIALOGEX 6, 18, 160, 114
+ID_DLG_AUTH DIALOGEX 6, 18, 160, 133
 STYLE WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | DS_CENTER | DS_SETFOREGROUND
 EXSTYLE WS_EX_TOPMOST
 FONT 8, "Microsoft Sans Serif"
@@ -45,14 +45,16 @@ LANGUAGE LANG_ENGLISH, SUBLANG_DEFAULT
 BEGIN
     LTEXT "&Username:", 0, 6,  9, 50, 10
     LTEXT "&Password:", 0, 6, 26, 50, 10
-    LTEXT "&Token:"   , 0, 6, 43, 50, 10
+    LTEXT "TOTP &Key:", 0, 6, 43, 50, 10
+    LTEXT "&Token:"   , 0, 6, 60, 50, 10
     EDITTEXT ID_EDT_AUTH_USER , 60,  6, 94, 12, ES_AUTOHSCROLL
     EDITTEXT ID_EDT_AUTH_PASS , 60, 23, 94, 12, ES_AUTOHSCROLL | ES_PASSWORD
-    EDITTEXT ID_EDT_AUTH_TOKEN, 60, 40, 94, 12, ES_AUTOHSCROLL | ES_NUMBER
-    CHECKBOX "&Save password", ID_CHK_SAVE_PASS,  6, 61, 100, 10
-    PUSHBUTTON "&OK"         , IDOK            , 20, 77, 50, 14, BS_DEFPUSHBUTTON | WS_TABSTOP | WS_DISABLED
-    PUSHBUTTON "&Cancel"     , IDCANCEL        , 90, 77, 52, 14
-    LTEXT "",                  ID_TXT_WARNING  ,  6, 99, 150, 10
+    EDITTEXT ID_EDT_AUTH_TOTP , 60, 40, 94, 12, ES_AUTOHSCROLL | ES_PASSWORD
+    EDITTEXT ID_EDT_AUTH_TOKEN, 60, 57, 94, 12, ES_AUTOHSCROLL | ES_NUMBER
+    CHECKBOX "&Save password", ID_CHK_SAVE_PASS,  6,  80, 100, 10
+    PUSHBUTTON "&OK"         , IDOK            , 20,  96, 50, 14, BS_DEFPUSHBUTTON | WS_TABSTOP | WS_DISABLED
+    PUSHBUTTON "&Cancel"     , IDCANCEL        , 90,  96, 52, 14
+    LTEXT "",                  ID_TXT_WARNING  ,  6, 116, 150, 10
 END
 
 /* Auth Username/Password/Challenge Dialog */
@@ -424,6 +426,7 @@ BEGIN
     IDS_NFO_KEY_PASS_RETRY  "Wrong password. Try again..."
     IDS_ERR_INVALID_PASSWORD_INPUT "Invalid character in password"
     IDS_ERR_INVALID_USERNAME_INPUT "Invalid character in username"
+    IDS_ERR_INVALID_TOTP_INPUT "Invalid character in TOTP key"
     IDS_NFO_AUTO_CONNECT    "Connecting automatically in %u seconds..."
     IDS_NFO_CLICK_HERE_TO_START "OpenVPN GUI is already running. Right click on the tray icon to start."
     IDS_NFO_BYTECOUNT "Bytes in: %s  out: %s"

@@ -305,6 +305,7 @@ ManagementCommandFromInputOtp(connection_t *c, LPCSTR fmt, HWND hDlg, int id, DW
     {
         cmd_len = snprintf(cmd, cmd_len + 1, fmt, input, otp);
         retval = ManagementCommand(c, cmd, NULL, regular);
+        SecureZeroMemory(cmd, cmd_len);
         free(cmd);
     }
 

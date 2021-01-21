@@ -12,6 +12,7 @@
 
 #define KEY_PASS_DATA     L"key-data"
 #define AUTH_PASS_DATA    L"auth-data"
+#define TOTP_PASS_DATA    L"totp-data"
 #define ENTROPY_DATA      L"entropy"
 #define AUTH_USER_DATA    L"username"
 #define ENTROPY_LEN 16
@@ -97,14 +98,13 @@ get_entropy(const WCHAR *config_name, char *e, int sz, BOOL generate)
  * Returns 1 on success.
  */
 static int
-save_encrypted(const WCHAR *config_name, const WCHAR *password, const WCHAR *name)
+save_encrypted_data(const WCHAR *config_name, const WCHAR *name, const void *password, DWORD len)
 {
     BYTE *out;
-    DWORD len = (wcslen(password) + 1) * sizeof(WCHAR);
     char entropy[ENTROPY_LEN+1];
 
     get_entropy(config_name, entropy, sizeof(entropy), true);
-    len = crypt_protect((BYTE*) password, len, entropy, &out);
+    len = crypt_protect(password, len, entropy, &out);
     if(len > 0)
     {
         SetConfigRegistryValueBinary(config_name, name, out, len);
@@ -113,6 +113,16 @@ save_encrypted(const WCHAR *config_name, const WCHAR *password, const WCHAR *nam
     }
     else
         return 0;
+}
+/*
+ * Given a nul terminated string password, encrypt it and save in
+ * a config specific registry key with specified name.
+ * Returns 1 on success.
+ */
+static int
+save_encrypted(const WCHAR *config_name, const WCHAR *password, const WCHAR *name)
+{
+    return save_encrypted_data(config_name, name, password, (wcslen(password) + 1) * sizeof(WCHAR));
 }
 
 /*
@@ -136,35 +146,80 @@ SaveAuthPass(const WCHAR *config_name, const WCHAR *password)
 }
 
 /*
+ * Encrypt the nul terminated string password and store it in the
+ * registry with key name TOTP_PASS_DATA. Returns 1 on success.
+ */
+int
+SaveTotpPass(const WCHAR *config_name, const char *password)
+{
+    return save_encrypted_data(config_name, TOTP_PASS_DATA, password, strlen(password));
+}
+
+/*
+ * Returns length on success, 0 on failure. password should have space
+ * for up to capacity wide chars incluing nul termination
+ */
+static int
+recall_encrypted_data(const WCHAR *config_name, const WCHAR *name, void **out)
+{
+    BYTE in[2048];
+    DWORD len = GetConfigRegistryValue(config_name, name, in, sizeof(in));
+    if(len == 0)
+        return 0;
+
+    char entropy[ENTROPY_LEN+1];
+    get_entropy(config_name, entropy, sizeof(entropy), false);
+    return crypt_unprotect(in, len, entropy, (BYTE**)out);
+}
+/*
  * Returns 1 on success, 0 on failure. password should have space
  * for up to capacity wide chars incluing nul termination
  */
 static int
 recall_encrypted(const WCHAR *config_name, WCHAR *password, DWORD capacity, const WCHAR *name)
 {
-    BYTE in[2048];
     BYTE *out;
     DWORD len;
     int retval = 0;
-    char entropy[ENTROPY_LEN+1];
 
-    get_entropy(config_name, entropy, sizeof(entropy), false);
+    memset(password, 0, capacity);
 
-    memset (password, 0, capacity);
-
-    len = GetConfigRegistryValue(config_name, name, in, sizeof(in));
+    len = recall_encrypted_data(config_name, name, &out);
     if(len == 0)
         return 0;
 
-    len = crypt_unprotect(in, len, entropy, &out);
+    if (len <= capacity)
+    {
+        memcpy(password, out, len);
+        password[capacity/sizeof(WCHAR)-1] = L'\0'; /* in case the data was corrupted */
+        retval = len;
+    }
+    else
+        PrintDebug(L"recall_encrypted: saved '%s' too long (len = %d bytes)", name, len);
+
+    SecureZeroMemory(out, len);
+    LocalFree(out);
+
+    return retval;
+}
+static int
+recall_encrypted_1(const WCHAR *config_name, char *password, DWORD capacity, const WCHAR *name)
+{
+    BYTE *out;
+    DWORD len;
+    int retval = 0;
+
+    memset(password, 0, capacity);
+
+    len = recall_encrypted_data(config_name, name, &out);
     if(len == 0)
         return 0;
 
-    if (len <= capacity * sizeof(*password))
+    if (len <= capacity)
     {
         memcpy(password, out, len);
         password[capacity-1] = L'\0'; /* in case the data was corrupted */
-        retval = 1;
+        retval = len;
     }
     else
         PrintDebug(L"recall_encrypted: saved '%s' too long (len = %d bytes)", name, len);
@@ -175,15 +230,16 @@ recall_encrypted(const WCHAR *config_name, WCHAR *password, DWORD capacity, cons
     return retval;
 }
 
+
 /*
  * Reccall saved private key password. The buffer password should be
  * have space for up to KEY_PASS_LEN WCHARs including nul.
  * Returns 1 on success, 0 on failure.
  */
 int
-RecallKeyPass(const WCHAR *config_name, WCHAR *password)
+RecallKeyPass(const WCHAR *config_name, WCHAR *password, DWORD size)
 {
-    return recall_encrypted(config_name, password, KEY_PASS_LEN, KEY_PASS_DATA);
+    return recall_encrypted(config_name, password, size, KEY_PASS_DATA);
 }
 
 /*
@@ -192,16 +248,27 @@ RecallKeyPass(const WCHAR *config_name, WCHAR *password)
  * Returns 1 on success, 0 on failure.
  */
 int
-RecallAuthPass(const WCHAR *config_name, WCHAR *password)
+RecallAuthPass(const WCHAR *config_name, WCHAR *password, DWORD size)
 {
-    return recall_encrypted(config_name, password, USER_PASS_LEN, AUTH_PASS_DATA);
+    return recall_encrypted(config_name, password, size, AUTH_PASS_DATA);
+}
+
+/*
+ * Reccall saved auth password. The buffer password should be
+ * have space for up to USER_PASS_LEN WCHARs including nul.
+ * Returns 1 on success, 0 on failure.
+ */
+int
+RecallTotpPass(const WCHAR *config_name, char *password, DWORD size)
+{
+    return recall_encrypted_1(config_name, password, size, TOTP_PASS_DATA);
 }
 
 int
 SaveUsername(const WCHAR *config_name, const WCHAR *username)
 {
     DWORD len = (wcslen(username) + 1) * sizeof(*username);
-    SetConfigRegistryValueBinary(config_name, AUTH_USER_DATA,(BYTE *) username, len);
+    SetConfigRegistryValueBinary(config_name, AUTH_USER_DATA, (const void*)username, len);
     return 1;
 }
 /*
@@ -209,16 +276,13 @@ SaveUsername(const WCHAR *config_name, const WCHAR *username)
  * WCHARs including nul.
  */
 int
-RecallUsername(const WCHAR *config_name, WCHAR *username)
+RecallUsername(const WCHAR *config_name, WCHAR *username, DWORD capacity)
 {
-    DWORD capacity = USER_PASS_LEN * sizeof(WCHAR);
-    DWORD len;
-
-    len = GetConfigRegistryValue(config_name, AUTH_USER_DATA, (BYTE *) username,  capacity);
+    DWORD len = GetConfigRegistryValue(config_name, AUTH_USER_DATA, (BYTE *)username, capacity);
     if (len == 0)
         return 0;
-    username[USER_PASS_LEN-1] = L'\0';
-    return 1;
+    username[capacity-1] = L'\0';
+    return len;
 }
 
 void
@@ -233,12 +297,19 @@ DeleteSavedAuthPass(const WCHAR *config_name)
     DeleteConfigRegistryValue(config_name, AUTH_PASS_DATA);
 }
 
+void
+DeleteSavedTotpPass(const WCHAR *config_name)
+{
+    DeleteConfigRegistryValue(config_name, TOTP_PASS_DATA);
+}
+
 /* delete saved config-specific auth password and private key passphrase */
 void
 DeleteSavedPasswords(const WCHAR *config_name)
 {
     DeleteConfigRegistryValue(config_name, KEY_PASS_DATA);
     DeleteConfigRegistryValue(config_name, AUTH_PASS_DATA);
+    DeleteConfigRegistryValue(config_name, TOTP_PASS_DATA);
     DeleteConfigRegistryValue(config_name, ENTROPY_DATA);
 }
 
@@ -246,9 +317,17 @@ DeleteSavedPasswords(const WCHAR *config_name)
 BOOL
 IsAuthPassSaved(const WCHAR *config_name)
 {
-    DWORD len = 0;
-    len = GetConfigRegistryValue(config_name, AUTH_PASS_DATA, NULL, 0);
-    PrintDebug(L"checking auth-pass-data in registry returned len = %d", len);
+    DWORD len = GetConfigRegistryValue(config_name, AUTH_PASS_DATA, NULL, 0);
+    PrintDebug(L"checking auth-data in registry returned len = %d", len);
+    return (len > 0);
+}
+
+/* check if TOTP password is saved */
+BOOL
+IsTotpPassSaved(const WCHAR *config_name)
+{
+    DWORD len = GetConfigRegistryValue(config_name, TOTP_PASS_DATA, NULL, 0);
+    PrintDebug(L"checking totp-data in registry returned len = %d", len);
     return (len > 0);
 }
 
@@ -256,8 +335,7 @@ IsAuthPassSaved(const WCHAR *config_name)
 BOOL
 IsKeyPassSaved(const WCHAR *config_name)
 {
-    DWORD len = 0;
-    len = GetConfigRegistryValue(config_name, KEY_PASS_DATA, NULL, 0);
-    PrintDebug(L"checking key-pass-data in registry returned len = %d", len);
+    DWORD len = GetConfigRegistryValue(config_name, KEY_PASS_DATA, NULL, 0);
+    PrintDebug(L"checking key-data in registry returned len = %d", len);
     return (len > 0);
 }

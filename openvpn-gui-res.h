@@ -59,6 +59,7 @@
 #define ID_EDT_AUTH_USER                 181
 #define ID_EDT_AUTH_PASS                 182
 #define ID_EDT_AUTH_TOKEN                183
+#define ID_EDT_AUTH_TOTP                 184
 
 /* Auth Username/Password/Challenge Dialog */
 #define ID_DLG_AUTH_CHALLENGE            183
@@ -327,8 +328,9 @@
 #define IDS_NFO_KEY_PASS_RETRY          2151
 
 /* Invalid input errors */
-#define IDS_ERR_INVALID_PASSWORD_INPUT  2152
-#define IDS_ERR_INVALID_USERNAME_INPUT  2153
+#define IDS_ERR_INVALID_USERNAME_INPUT  2152
+#define IDS_ERR_INVALID_PASSWORD_INPUT  2153
+#define IDS_ERR_INVALID_TOTP_INPUT      2154
 
 /* Timer IDs */
 #define IDT_STOP_TIMER                  2500  /* Timer used to trigger force termination */

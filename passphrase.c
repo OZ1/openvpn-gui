@@ -728,4 +728,23 @@ CheckKeyFileWriteAccess (connection_t *c)
      return CheckFileAccess (keyfile, GENERIC_WRITE);
 }
 
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
+
+DWORD
+GetOneTimePassword(const void* key, DWORD key_len)
+{
+    uint8_t hash[20];
+    uint64_t interval = time(NULL) / 30;
+    uint64_t data = _byteswap_uint64(interval);
+    HMAC(EVP_sha1(), key, key_len, (const void*)&data, sizeof(data), hash, NULL);
+
+    uint8_t offset = hash[sizeof(hash) - 1] & 0xF;
+    uint32_t truncatedHash = *(uint32_t*)&hash[offset];
+    truncatedHash = _byteswap_ulong(truncatedHash);
+    truncatedHash &= 0x7FFFFFFF;
+    truncatedHash %= 1000000;
+    return truncatedHash;
+}
+
 #endif

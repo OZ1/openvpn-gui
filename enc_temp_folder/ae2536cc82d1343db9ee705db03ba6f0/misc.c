@@ -299,11 +299,11 @@ ManagementCommandFromInputOtp(connection_t *c, LPCSTR fmt, HWND hDlg, int id, DW
         }
     }
 
-    cmd_len = snprintf(NULL, 0, fmt, input, otp);
-    cmd = malloc(cmd_len + 1);
+    cmd_len = strlen(fmt) + input_len;
+    cmd = malloc(cmd_len);
     if (cmd)
     {
-        cmd_len = snprintf(cmd, cmd_len + 1, fmt, input, otp);
+        snprintf(cmd, cmd_len, fmt, input, otp);
         retval = ManagementCommand(c, cmd, NULL, regular);
         free(cmd);
     }
