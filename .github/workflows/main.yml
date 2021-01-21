@@ -37,14 +37,13 @@ jobs:
           #cc: 1 # optional, default is 1
           # On Cygwin, replace executable symlinks with hardlinks
           #hardlinks: 1 # optional, default is 0
-          install: base-devel mingw-w64-${{matrix.arch}}-{toolchain,openssl}
+          install: base-devel mingw-w64-${{matrix.arch}}-toolchain mingw-w64-${{matrix.arch}}-openssl
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
       # Runs a single command using the runners shell
-      - name: Build
-        shell: msys2 {0}
+      - shell: msys2 {0}
         run: |
           autoreconf -iv
           ./configure
