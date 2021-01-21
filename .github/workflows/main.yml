@@ -19,14 +19,13 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: windows-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    strategy:
+      matrix:
+        include: [{ msystem: MINGW64, arch: x86_64 }]
     steps:
-      - name: Install MinGW
-        # You may pin to the exact commit or the version.
-        # uses: egor-tensin/setup-mingw@f3c5d799aadf8fa230ac67a422b01dd085bbc96b
-        uses: msys2/setup-msys2@v2
+      - uses: msys2/setup-msys2@v2
         with:
+          msystem: MSYS
           update: true
           # Target platform
           #platform: x64 # optional, default is x64
@@ -38,15 +37,14 @@ jobs:
           #cc: 1 # optional, default is 1
           # On Cygwin, replace executable symlinks with hardlinks
           #hardlinks: 1 # optional, default is 0
-          install: >-
-            base-devel
-            mingw-w64-x86_64-{toolchain,openssl}
+          install: base-devel mingw-w64-${{matrix.arch}}-{{toolchain,openssl}}
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
       # Runs a single command using the runners shell
       - name: Build
+        shell: msys2 {0}
         run: |
           autoreconf -iv
           ./configure
