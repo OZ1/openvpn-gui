@@ -477,8 +477,9 @@ BEGIN
 
     IDS_NFO_AUTH_PASS_RETRY "Неправильное имя пользователя или пароль"
     IDS_NFO_KEY_PASS_RETRY  "Неправильный пароль"
-    IDS_ERR_INVALID_PASSWORD_INPUT "Invalid character in password"
-    IDS_ERR_INVALID_USERNAME_INPUT "Invalid character in username"
+    IDS_ERR_INVALID_PASSWORD_INPUT "Неправильный сѵмвол в паролѣ"
+    IDS_ERR_INVALID_USERNAME_INPUT "Неправильный сѵмвол в имени пользователя"
+    IDS_ERR_INVALID_TOTP_INPUT "не base32"
     IDS_NFO_AUTO_CONNECT    "Автоматическое подключение через %u сек..."
     IDS_NFO_CLICK_HERE_TO_START "OpenVPN GUI is already running. Right click on the tray icon to start."
     IDS_NFO_BYTECOUNT "Bytes in: %s  out: %s"
