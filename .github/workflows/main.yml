@@ -37,7 +37,7 @@ jobs:
           #cc: 1 # optional, default is 1
           # On Cygwin, replace executable symlinks with hardlinks
           #hardlinks: 1 # optional, default is 0
-          install: base-devel mingw-w64-${{matrix.arch}}-{{toolchain,openssl}}
+          install: base-devel mingw-w64-${{matrix.arch}}-{toolchain,openssl}
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
@@ -49,3 +49,8 @@ jobs:
           autoreconf -iv
           ./configure
           make
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.msystem }}-packages
+          path: C:/_/artifacts/*.pkg.tar.*
