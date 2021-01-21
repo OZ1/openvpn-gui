@@ -212,6 +212,55 @@ out:
 }
 
 
+BOOL
+ManagementCommandFromInput2(connection_t *c, LPCSTR fmt, HWND hDlg, int id, int id2)
+{
+    BOOL retval = FALSE;
+    LPSTR input, input2, cmd;
+    int input_len, input2_len, cmd_len, pos;
+
+    GetDlgItemTextUtf8(hDlg, id, &input, &input_len);
+    GetDlgItemTextUtf8(hDlg, id2, &input2, &input2_len);
+
+    /* Escape input if needed */
+    for (pos = 0; pos < input_len; ++pos)
+    {
+        if (input[pos] == '\\' || input[pos] == '"')
+        {
+            LPSTR buf = realloc(input, ++input_len + 1);
+            if (buf == NULL)
+                goto out;
+
+            input = buf;
+            memmove(input + pos + 1, input + pos, input_len - pos + 1);
+            input[pos] = '\\';
+            pos += 1;
+        }
+    }
+
+    cmd_len = strlen(fmt) + input_len + input2_len;
+    cmd = malloc(cmd_len);
+    if (cmd)
+    {
+        snprintf(cmd, cmd_len, fmt, input, input2);
+        retval = ManagementCommand(c, cmd, NULL, regular);
+        free(cmd);
+    }
+
+out:
+    /* Clear buffers with potentially secret content */
+    if (input_len)
+    {
+        memset(input, 'x', input_len);
+        SetDlgItemTextA(hDlg, id, input);
+        free(input);
+    }
+    SecureZeroMemory(input2, input2_len);
+
+    return retval;
+}
+
+
 
 /*
  * Generate a management command from double user inputs and send it

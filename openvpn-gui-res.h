@@ -58,6 +58,7 @@
 #define ID_DLG_AUTH                      180
 #define ID_EDT_AUTH_USER                 181
 #define ID_EDT_AUTH_PASS                 182
+#define ID_EDT_AUTH_TOKEN                183
 
 /* Auth Username/Password/Challenge Dialog */
 #define ID_DLG_AUTH_CHALLENGE            183

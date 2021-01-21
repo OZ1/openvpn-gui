@@ -571,7 +571,7 @@ UserAuthDialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
             if (param->flags & FLAG_CR_TYPE_SCRV1)
                 ManagementCommandFromInputBase64(param->c, "password \"Auth\" \"SCRV1:%s:%s\"", hwndDlg, ID_EDT_AUTH_PASS, ID_EDT_AUTH_CHALLENGE);
             else
-                ManagementCommandFromInput(param->c, "password \"Auth\" \"%s\"", hwndDlg, ID_EDT_AUTH_PASS);
+                ManagementCommandFromInput2(param->c, "password \"Auth\" \"%s%s\"", hwndDlg, ID_EDT_AUTH_PASS, ID_EDT_AUTH_TOKEN);
             EndDialog(hwndDlg, LOWORD(wParam));
             return TRUE;
 
