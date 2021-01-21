@@ -27,6 +27,7 @@ jobs:
         with:
           msystem: MSYS
           update: true
+          path-type: inherit
           # Target platform
           #platform: x64 # optional, default is x64
           # Install Cygwin packages
@@ -37,7 +38,10 @@ jobs:
           #cc: 1 # optional, default is 1
           # On Cygwin, replace executable symlinks with hardlinks
           #hardlinks: 1 # optional, default is 0
-          install: base-devel mingw-w64-${{matrix.arch}}-toolchain mingw-w64-${{matrix.arch}}-openssl
+          install: >-
+            base-devel
+            mingw-w64-${{matrix.arch}}-toolchain
+            mingw-w64-${{matrix.arch}}-openssl
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
