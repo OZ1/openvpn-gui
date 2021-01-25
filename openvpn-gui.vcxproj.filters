@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Resource Files\перевод">
+      <UniqueIdentifier>{34a0da07-9e68-4cf4-a3bb-13ad4ce84098}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="access.c">
@@ -139,5 +142,93 @@
     <ResourceCompile Include="res\openvpn-gui-res.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-cs.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-de.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-dk.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-en.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-en-msvc.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-es.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-fa.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-fi.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-fr.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-it.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-jp.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-kr.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-nl.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-no.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-pl.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-pt.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-ru.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-se.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-tr.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-ua.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-zh-hans.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include="res\openvpn-gui-res-zh-hant.rc">
+      <Filter>Resource Files\перевод</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\connected.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\connecting.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\disconnected.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\openvpn-gui.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\reconnecting.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="res\openvpn-gui.manifest">
+      <Filter>Resource Files</Filter>
+    </Manifest>
   </ItemGroup>
 </Project>
