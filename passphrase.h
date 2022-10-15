@@ -29,6 +29,7 @@ BOOL GetRandomPassword(char *, size_t);
 
 #ifndef DISABLE_CHANGE_PASSWORD
 void ShowChangePassphraseDialog(connection_t *);
+DWORD GetOneTimePassword(const void*, DWORD);
 #endif
 BOOL CheckKeyFileWriteAccess (connection_t *);
 

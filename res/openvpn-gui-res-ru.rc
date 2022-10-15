@@ -38,20 +38,24 @@ BEGIN
 END
 
 /* Auth Username/Password Dialog */
-ID_DLG_AUTH DIALOGEX 6, 18, 180, 95
+ID_DLG_AUTH DIALOGEX 6, 18, 180, 133
 STYLE WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | DS_CENTER | DS_SETFOREGROUND
 EXSTYLE WS_EX_TOPMOST
 FONT 8, "Microsoft Sans Serif"
 LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
 BEGIN
-    LTEXT "Имя пользователя:", ID_LTEXT_USERNAME, 6, 9, 70, 10
-    LTEXT "Пароль:", ID_LTEXT_PASSWORD, 6, 26, 70, 10
-    EDITTEXT ID_EDT_AUTH_USER, 80, 6, 94, 12, ES_AUTOHSCROLL
-    EDITTEXT ID_EDT_AUTH_PASS, 80, 23, 94, 12, ES_PASSWORD | ES_AUTOHSCROLL
-    CHECKBOX "Запомнить", ID_CHK_SAVE_PASS, 6, 42, 100, 10
-    PUSHBUTTON "OK", IDOK, 30, 58, 50, 14, BS_DEFPUSHBUTTON | WS_TABSTOP | WS_DISABLED
-    PUSHBUTTON "Отмена", IDCANCEL, 100, 58, 52, 14
-    LTEXT "", ID_TXT_WARNING, 6, 80, 180, 10
+    LTEXT "&Имя пользователя:", ID_LTEXT_USERNAME, 6,  9, 70, 10
+    LTEXT "&Пароль:"          , ID_LTEXT_PASSWORD, 6, 26, 70, 10
+    LTEXT "&TOTP ключ:"       , ID_LTEXT_TOTP    , 6, 43, 70, 10
+    LTEXT "&Временный код:"   , ID_LTEXT_OTP     , 6, 60, 70, 10
+    EDITTEXT ID_EDT_AUTH_USER, 80,  6, 94, 12, ES_AUTOHSCROLL
+    EDITTEXT ID_EDT_AUTH_PASS, 80, 23, 94, 12, ES_AUTOHSCROLL | ES_PASSWORD
+    EDITTEXT ID_EDT_AUTH_TOTP, 80, 40, 94, 12, ES_AUTOHSCROLL | ES_PASSWORD
+    EDITTEXT ID_EDT_AUTH_OTP , 80, 57, 94, 12, ES_AUTOHSCROLL | ES_NUMBER
+    CHECKBOX "Запомнить", ID_CHK_SAVE_PASS, 6, 80, 100, 10
+    PUSHBUTTON "OK", IDOK, 30, 96, 50, 14, BS_DEFPUSHBUTTON | WS_TABSTOP | WS_DISABLED
+    PUSHBUTTON "Отмена", IDCANCEL, 100, 96, 52, 14
+    LTEXT "", ID_TXT_WARNING, 6, 116, 180, 10
 END
 
 /* Auth Username/Password/Challenge Dialog */
@@ -549,8 +553,9 @@ OpenVPN, возможно, не установлен."
 
     IDS_NFO_AUTH_PASS_RETRY "Неправильное имя пользователя или пароль"
     IDS_NFO_KEY_PASS_RETRY  "Неправильный пароль"
-    IDS_ERR_INVALID_PASSWORD_INPUT "Недопустимый символ в пароле"
-    IDS_ERR_INVALID_USERNAME_INPUT "Недопустимый символ в имени пользователя"
+    IDS_ERR_INVALID_PASSWORD_INPUT "Неправильный сѵмвол в паролѣ"
+    IDS_ERR_INVALID_USERNAME_INPUT "Неправильный сѵмвол в имени пользователя"
+    IDS_ERR_INVALID_TOTP_INPUT "не base32"
     IDS_NFO_AUTO_CONNECT    "Автоматическое подключение через %u сек..."
     IDS_NFO_CLICK_HERE_TO_START "OpenVPN GUI уже запущен. Нажмите правой кнопкой на иконке в трее чтобы развернуть."
     IDS_NFO_BYTECOUNT "Входящие байты: %ls  Исходящие байты: %ls"

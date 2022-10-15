@@ -127,6 +127,70 @@ Base64Decode(const char *input, char **output)
     return len;
 }
 
+/*
+* Decode a nul-terminated base32 encoded input and save the result in
+* an allocated buffer *output. The caller must free *output after use.
+* The decoded output is nul-terminated so that the caller may treat
+* it as a string when appropriate.
+*
+* Return the length of the decoded result (excluding nul) or -1 on
+* error.
+*/
+int
+Base32Decode(const char *input, void **output)
+{
+    const char* end = strchr(input, '=');
+    DWORD in_len = end ? (end - input) : strlen(input);
+    DWORD len = in_len * 5 / 8; // this must be TRUNCATED
+    DWORD inputIndex;
+    DWORD arrayIndex = 0;
+    BYTE bitsRemaining = 8;
+
+    PrintDebug (L"decoding %hs", input);
+    BYTE* returnArray = malloc(len + 1);;
+    *output = returnArray;
+    if (returnArray == NULL)
+        return -1;
+
+    *returnArray = 0;
+    for (inputIndex = 0; inputIndex < in_len; inputIndex++)
+    {
+        char ch = input[inputIndex];
+        if ('A' <= ch && ch <= 'Z')
+            ch -= 'A';
+        else
+        if ('2' <= ch && ch <= '7')
+            ch -= '2' - 26;
+        else
+        if ('a' <= ch && ch <= 'z')
+            ch -= 'a';
+        else
+        {
+            free(*output);
+            *output = NULL;
+            return -1;
+        }
+        if (bitsRemaining > 5)
+        {
+            BYTE mask = ch << (bitsRemaining - 5);
+            *returnArray |= mask;
+            bitsRemaining -= 5;
+        }
+        else
+        {
+            DWORD mask = ch << (3 + bitsRemaining);
+            *returnArray++ |= mask >> 8;
+            *returnArray = mask;
+            bitsRemaining += 3;
+        }
+    }
+
+    /* NUL terminate output */
+    ((char*)*output)[len] = '\0';
+    PrintDebug (L"Decoded output %hs", *output);
+    return len;
+}
+
 BOOL
 GetDlgItemTextUtf8(HWND hDlg, int id, LPSTR *str, int *len)
 {
@@ -249,6 +313,48 @@ out:
     return retval;
 }
 
+/*
+ * Generate a management command from double user inputs and send it
+ */
+BOOL
+ManagementCommandFromInputOtp(connection_t *c, LPCSTR fmt, HWND hDlg, int id, DWORD otp)
+{
+    BOOL retval = FALSE;
+    LPSTR input, cmd;
+    int input_len, cmd_len;
+
+    GetDlgItemTextUtf8(hDlg, id, &input, &input_len);
+
+    /* Escape input if needed */
+    char *input_e = escape_string(input);
+    if (!input_e)
+    {
+        goto out;
+    }
+    free(input);
+    input = input_e;
+    input_len = strlen(input);
+
+    cmd_len = snprintf(NULL, 0, fmt, input, otp);
+    cmd = malloc(cmd_len + 1);
+    if (cmd)
+    {
+        cmd_len = snprintf(cmd, cmd_len + 1, fmt, input, otp);
+        retval = ManagementCommand(c, cmd, NULL, regular);
+        free(cmd);
+    }
+
+out:
+    /* Clear buffers with potentially secret content */
+    if (input_len)
+    {
+        memset(input, 'x', input_len);
+        SetDlgItemTextA(hDlg, id, input);
+        free(input);
+    }
+
+    return retval;
+}
 
 
 /*

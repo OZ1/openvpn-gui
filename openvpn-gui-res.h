@@ -64,6 +64,10 @@
 #define ID_DLG_AUTH                      180
 #define ID_EDT_AUTH_USER                 181
 #define ID_EDT_AUTH_PASS                 182
+#define ID_EDT_AUTH_OTP                  193
+#define ID_EDT_AUTH_TOTP                 194
+#define ID_LTEXT_OTP                     195
+#define ID_LTEXT_TOTP                    196
 
 /* Auth Username/Password/Challenge Dialog */
 #define ID_DLG_AUTH_CHALLENGE            183
@@ -368,6 +372,7 @@
 /* Invalid input errors */
 #define IDS_ERR_INVALID_PASSWORD_INPUT  2152
 #define IDS_ERR_INVALID_USERNAME_INPUT  2153
+#define IDS_ERR_INVALID_TOTP_INPUT      2154
 
 /* pkcs11 related */
 #define IDS_ERR_NO_PKCS11               2160
