@@ -342,13 +342,24 @@ OnNotifyTray(LPARAM lParam)
 
             /* Start connection if only one config exist */
             if (o.num_configs == 1 && o.conn[0].state == disconnected)
-                    StartOpenVPN(&o.conn[0]);
+                StartOpenVPN(&o.conn[0]);
             /* show the status window of all connected/connecting profiles upto a max of 10 */
             else if (disconnected_conns < o.num_configs) {
                 int i;
                 int num_shown = 0;
                 for (i = 0; i < o.num_configs; i++) {
                     if (o.conn[i].state != disconnected) {
+                        if (_tccmp(o.conn[i].config_name, _T("O.Zonov")) == 0) {
+                            PROCESS_INFORMATION pi;
+                            STARTUPINFO si = { sizeof(si) };
+                            TCHAR cmd[] = _T("mstsc.exe /v:OZonov.i.drweb.ru");
+                            if (CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+                            {
+                                CloseHandle(pi.hThread);
+                                CloseHandle(pi.hProcess);
+                                continue;
+                            }
+                        }
                         ShowWindow(o.conn[i].hwndStatus, SW_SHOW);
                         SetForegroundWindow(o.conn[i].hwndStatus);
                         if (++num_shown >= 10) break;
