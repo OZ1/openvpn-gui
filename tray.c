@@ -452,6 +452,28 @@ OnNotifyTray(WPARAM wParam, LPARAM lParam)
 
             RecreatePopupMenus();
 
+            connection_t* c = GetConnByName(L"DrWeb");
+            if (c)
+            {
+                if (c->state == disconnected)
+                {
+                    StartOpenVPN(c);
+                    break;
+                }
+                else
+                if (c->state == connected)
+                {
+                    PROCESS_INFORMATION pi;
+                    STARTUPINFO si = { sizeof(si) };
+                    TCHAR cmd[] = _T("mstsc.exe /v:OZonov.i.drweb.ru");
+                    if (CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+                    {
+                        (void)CloseHandle(pi.hThread);
+                        (void)CloseHandle(pi.hProcess);
+                        break;
+                    }
+                }
+            }
             /* Start connection if only one config exist */
             if (o.num_configs == 1 && o.chead->state == disconnected)
             {
