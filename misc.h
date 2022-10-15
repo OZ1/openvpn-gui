@@ -28,6 +28,8 @@
 
 BOOL ManagementCommandFromInput(connection_t *, LPCSTR, HWND, int);
 
+BOOL ManagementCommandFromInputOtp(connection_t *, LPCSTR, HWND, int, DWORD);
+
 BOOL ManagementCommandFromTwoInputsBase64(connection_t *, LPCSTR, HWND, int, int);
 
 BOOL ManagementCommandFromInputBase64(connection_t *, LPCSTR, HWND, int);
@@ -53,6 +55,8 @@ BOOL CheckFileAccess(const TCHAR *path, int access);
 BOOL Base64Encode(const char *input, int input_len, char **output);
 
 int Base64Decode(const char *input, char **output);
+
+int Base32Decode(const char *input, void **output);
 
 WCHAR *Widen(const char *utf8);
 

@@ -55,6 +55,9 @@ if(NOT (${CMAKE_C_COMPILER_ARCHITECTURE_ID} STREQUAL "ARM64"))
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /CETCOMPAT")
 endif()
 
+find_package(OpenSSL REQUIRED)
+include_directories(${OPENSSL_INCLUDE_DIR})
+
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Wtsapi32.lib
     Netapi32.lib
@@ -72,7 +75,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Cryptui.lib
     Wininet.lib
     Iphlpapi.lib
-    Ntdll.lib)
+    Ntdll.lib
+    OpenSSL::Crypto)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -154,7 +158,8 @@ target_link_libraries(${PROJECT_NAME_PLAP} PRIVATE
     Cryptui.lib
     Rpcrt4.lib
     Iphlpapi.lib
-    Ntdll.lib)
+    Ntdll.lib
+    OpenSSL::Crypto)
 
 add_dependencies(${PROJECT_NAME_PLAP} msg_header_gen)
 

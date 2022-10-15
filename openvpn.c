@@ -64,6 +64,11 @@
 #include "service.h"
 #include "qr.h"
 
+#ifndef DISABLE_CHANGE_PASSWORD
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
+#endif
+
 #define OPENVPN_SERVICE_PIPE_NAME_OVPN2 L"\\\\.\\pipe\\openvpn\\service"
 #define OPENVPN_SERVICE_PIPE_NAME_OVPN3 L"\\\\.\\pipe\\ovpnagent"
 
@@ -592,6 +597,9 @@ UserAuthDialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
     auth_param_t *param;
     WCHAR username[USER_PASS_LEN] = L"";
     WCHAR password[USER_PASS_LEN] = L"";
+    char  totp_key[USER_PASS_LEN] =  "";
+    BOOL  translated_otp = FALSE;
+    DWORD otp;
 
     switch (msg)
     {
@@ -636,6 +644,11 @@ UserAuthDialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
             {
                 SetDlgItemTextW(hwndDlg, ID_EDT_AUTH_USER, username);
                 SetFocus(GetDlgItem(hwndDlg, ID_EDT_AUTH_PASS));
+            }
+            if (RecallTotpPass(param->c->config_name, totp_key))
+            {
+                SetDlgItemTextA(hwndDlg, ID_EDT_AUTH_TOTP, totp_key);
+                SecureZeroMemory(totp_key, sizeof(totp_key));
             }
             if (RecallAuthPass(param->c->config_name, password))
             {
@@ -736,6 +749,11 @@ UserAuthDialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
                     AutoCloseCancel(hwndDlg); /* user interrupt */
                     break;
 
+                case ID_EDT_AUTH_TOTP:
+                case ID_EDT_AUTH_OTP:
+                    AutoCloseCancel(hwndDlg); /* user interrupt */
+                    break;
+
                 case ID_CHK_SAVE_PASS:
                     param->c->flags ^= FLAG_SAVE_AUTH_PASS;
                     if (param->c->flags & FLAG_SAVE_AUTH_PASS)
@@ -789,6 +807,42 @@ UserAuthDialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 
                         SecureZeroMemory(password, sizeof(password));
                     }
+                    if (GetDlgItemTextA(hwndDlg, ID_EDT_AUTH_TOTP, totp_key, _countof(totp_key)))
+                    {
+                        void* secret;
+                        DWORD len = Base32Decode(totp_key, &secret);
+                        if (len <= 0)
+                        {
+                            show_error_tip(GetDlgItem(hwndDlg, ID_EDT_AUTH_TOTP), LoadLocalizedString(IDS_ERR_INVALID_TOTP_INPUT));
+                            SecureZeroMemory(totp_key, sizeof(totp_key));
+                            return 0;
+                        }
+                        if ( param->c->flags & FLAG_SAVE_AUTH_PASS && totp_key[0] )
+                        {
+                            SaveTotpPass(param->c->config_name, totp_key);
+                        }
+                        SecureZeroMemory(totp_key, sizeof(totp_key));
+#ifndef DISABLE_CHANGE_PASSWORD
+                        uint8_t hash[20];
+                        uint64_t interval = time(NULL) / 30;
+                        uint64_t data = _byteswap_uint64(interval);
+                        HMAC(EVP_sha1(), secret, len, (const void*)&data, sizeof(data), hash, NULL);
+                        uint8_t offset = hash[sizeof(hash) - 1] & 0xF;
+                        otp = *(uint32_t*)&hash[offset];
+                        otp = _byteswap_ulong(otp);
+                        otp &= 0x7FFFFFFF;
+                        otp %= 1000000;
+                        translated_otp = TRUE;
+#endif
+                        SecureZeroMemory(secret, len);
+                        free(secret);
+                    }
+#ifndef DISABLE_CHANGE_PASSWORD
+                    else
+#endif
+                    {
+                        otp = GetDlgItemInt(hwndDlg, ID_EDT_AUTH_OTP, &translated_otp, FALSE);
+                    }
                     ManagementCommandFromInput(
                         param->c, "username \"Auth\" \"%s\"", hwndDlg, ID_EDT_AUTH_USER);
 
@@ -799,6 +853,10 @@ UserAuthDialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
                                                              hwndDlg,
                                                              ID_EDT_AUTH_PASS,
                                                              ID_EDT_AUTH_CHALLENGE);
+                    }
+                    else if (translated_otp)
+                    {
+                        ManagementCommandFromInputOtp(param->c, "password \"Auth\" \"%s%06u\"", hwndDlg, ID_EDT_AUTH_PASS, otp);
                     }
                     else if (!(param->flags & FLAG_USERNAME_ONLY))
                     {
@@ -1105,7 +1163,7 @@ PrivKeyPassDialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
             c = (connection_t *)lParam;
             TRY_SETPROP(hwndDlg, cfgProp, (HANDLE)c);
             AppendTextToCaption(hwndDlg, c->config_name);
-            if (RecallKeyPass(c->config_name, passphrase) && wcslen(passphrase)
+            if (RecallKeyPass(c->config_name, passphrase)
                 && c->failed_psw_attempts == 0)
             {
                 /* Use the saved password and skip the dialog */

@@ -33,6 +33,7 @@
 
 #define KEY_PASS_DATA      L"key-data"
 #define AUTH_PASS_DATA     L"auth-data"
+#define TOTP_PASS_DATA     L"totp-data"
 #define ENTROPY_DATA       L"entropy"
 #define AUTH_USER_DATA     L"username"     /* plain username - deprecated */
 #define AUTH_USER_ENC_DATA L"username-enc" /* encrypted user name */
@@ -117,16 +118,10 @@ get_entropy(const WCHAR *config_name, char *e, int sz, BOOL generate)
     *e = '\0';
     return;
 }
-/*
- * Given a nul terminated string password, encrypt it and save in
- * a config specific registry key with specified name.
- * Returns 1 on success.
- */
 static int
-save_encrypted(const WCHAR *config_name, const WCHAR *password, const WCHAR *name)
+save_encrypted_data(const WCHAR *config_name, const WCHAR *name, const void *password, DWORD len)
 {
     BYTE *out;
-    DWORD len = (wcslen(password) + 1) * sizeof(WCHAR);
     char entropy[ENTROPY_LEN + 1];
 
     get_entropy(config_name, entropy, sizeof(entropy), true);
@@ -141,6 +136,17 @@ save_encrypted(const WCHAR *config_name, const WCHAR *password, const WCHAR *nam
     {
         return 0;
     }
+}
+
+/*
+ * Given a nul terminated string password, encrypt it and save in
+ * a config specific registry key with specified name.
+ * Returns 1 on success.
+ */
+static int
+save_encrypted(const WCHAR *config_name, const WCHAR *password, const WCHAR *name)
+{
+    return save_encrypted_data(config_name, name, password, (wcslen(password) + 1) * sizeof(WCHAR));
 }
 
 /*
@@ -164,11 +170,21 @@ SaveAuthPass(const WCHAR *config_name, const WCHAR *password)
 }
 
 /*
- * Returns 1 on success, 0 on failure. password should have space
+ * Encrypt the nul terminated string password and store it in the
+ * registry with key name TOTP_PASS_DATA. Returns 1 on success.
+ */
+int
+SaveTotpPass(const WCHAR *config_name, const char *password)
+{
+    return save_encrypted_data(config_name, TOTP_PASS_DATA, password, strlen(password));
+}
+
+/*
+ * Returns byte len on success, 0 on failure. password should have space
  * for up to capacity wide chars incluing nul termination
  */
 static int
-recall_encrypted(const WCHAR *config_name, WCHAR *password, DWORD capacity, const WCHAR *name)
+recall_encrypted(const WCHAR *config_name, void *password, DWORD capacity, const WCHAR *name)
 {
     BYTE in[2048];
     BYTE *out;
@@ -192,11 +208,10 @@ recall_encrypted(const WCHAR *config_name, WCHAR *password, DWORD capacity, cons
         return 0;
     }
 
-    if (len <= capacity * sizeof(*password))
+    if (len <= capacity)
     {
         memcpy(password, out, len);
-        password[capacity - 1] = L'\0'; /* in case the data was corrupted */
-        retval = 1;
+        retval = len;
     }
     else
     {
@@ -217,7 +232,7 @@ recall_encrypted(const WCHAR *config_name, WCHAR *password, DWORD capacity, cons
 int
 RecallKeyPass(const WCHAR *config_name, WCHAR *password)
 {
-    return recall_encrypted(config_name, password, KEY_PASS_LEN, KEY_PASS_DATA);
+    return recall_encrypted(config_name, password, KEY_PASS_LEN * sizeof(WCHAR), KEY_PASS_DATA);
 }
 
 /*
@@ -228,7 +243,18 @@ RecallKeyPass(const WCHAR *config_name, WCHAR *password)
 int
 RecallAuthPass(const WCHAR *config_name, WCHAR *password)
 {
-    return recall_encrypted(config_name, password, USER_PASS_LEN, AUTH_PASS_DATA);
+    return recall_encrypted(config_name, password, USER_PASS_LEN * sizeof(WCHAR), AUTH_PASS_DATA);
+}
+
+/*
+ * Reccall saved auth password. The buffer password should be
+ * have space for up to USER_PASS_LEN WCHARs including nul.
+ * Returns 1 on success, 0 on failure.
+ */
+int
+RecallTotpPass(const WCHAR *config_name, char *password)
+{
+    return recall_encrypted(config_name, password, USER_PASS_LEN, TOTP_PASS_DATA);
 }
 
 int
@@ -236,6 +262,7 @@ SaveUsername(const WCHAR *config_name, const WCHAR *username)
 {
     return save_encrypted(config_name, username, AUTH_USER_ENC_DATA);
 }
+
 /*
  * The buffer username should be have space for up to USER_PASS_LEN
  * WCHARs including nul.
@@ -252,7 +279,7 @@ RecallUsernamePlain(const WCHAR *config_name, WCHAR *username)
         return 0;
     }
     username[USER_PASS_LEN - 1] = L'\0';
-    return 1;
+    return len;
 }
 
 int
@@ -285,12 +312,19 @@ DeleteSavedAuthPass(const WCHAR *config_name)
     DeleteConfigRegistryValue(config_name, AUTH_PASS_DATA);
 }
 
+void
+DeleteSavedTotpPass(const WCHAR *config_name)
+{
+    DeleteConfigRegistryValue(config_name, TOTP_PASS_DATA);
+}
+
 /* delete saved config-specific auth password and private key passphrase */
 void
 DeleteSavedPasswords(const WCHAR *config_name)
 {
     DeleteConfigRegistryValue(config_name, KEY_PASS_DATA);
     DeleteConfigRegistryValue(config_name, AUTH_PASS_DATA);
+    DeleteConfigRegistryValue(config_name, TOTP_PASS_DATA);
 }
 
 /* check if auth password is saved */
@@ -310,5 +344,14 @@ IsKeyPassSaved(const WCHAR *config_name)
     DWORD len = 0;
     len = GetConfigRegistryValue(config_name, KEY_PASS_DATA, NULL, 0);
     PrintDebug(L"checking key-pass-data in registry returned len = %d", len);
+    return (len > 0);
+}
+
+/* check if TOTP password is saved */
+BOOL
+IsTotpPassSaved(const WCHAR *config_name)
+{
+    DWORD len = GetConfigRegistryValue(config_name, TOTP_PASS_DATA, NULL, 0);
+    PrintDebug(L"checking totp-data in registry returned len = %d", len);
     return (len > 0);
 }

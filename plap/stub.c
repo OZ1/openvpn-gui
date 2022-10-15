@@ -130,6 +130,11 @@ SaveAuthPass(UNUSED const WCHAR *config_name, UNUSED const WCHAR *password)
     return 1;
 }
 int
+SaveTotpPass(UNUSED const WCHAR *config_name, UNUSED const char *password)
+{
+    return 1;
+}
+int
 SaveUsername(UNUSED const WCHAR *config_name, UNUSED const WCHAR *username)
 {
     return 1;
@@ -142,6 +147,11 @@ RecallKeyPass(UNUSED const WCHAR *config_name, UNUSED WCHAR *password)
 }
 int
 RecallAuthPass(UNUSED const WCHAR *config_name, UNUSED WCHAR *password)
+{
+    return 0;
+}
+int
+RecallTotpPass(UNUSED const WCHAR *config_name, UNUSED char *password)
 {
     return 0;
 }
