@@ -701,8 +701,13 @@ UserAuthDialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
             {
                 SetForegroundWindow(hwndDlg);
             }
-            ResetPasswordReveal(
-                GetDlgItem(hwndDlg, ID_EDT_AUTH_PASS), GetDlgItem(hwndDlg, ID_PASSWORD_REVEAL), 0);
+            if (o.disable_password_reveal)
+            {
+                ShowWindow(GetDlgItem(hwndDlg, ID_PASSWORD_REVEAL), SW_HIDE);
+            }
+            SendMessage(GetDlgItem(hwndDlg, ID_PASSWORD_REVEAL), STM_SETIMAGE, (WPARAM)IMAGE_ICON, (LPARAM)LoadLocalizedSmallIcon(ID_ICO_EYE));
+
+            ResetPasswordReveal(GetDlgItem(hwndDlg, ID_EDT_AUTH_PASS), GetDlgItem(hwndDlg, ID_PASSWORD_REVEAL), 0);
 
             if (param->flags & FLAG_USERNAME_ONLY)
             {
@@ -725,13 +730,8 @@ UserAuthDialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
             TRY_GETPROP(hwndDlg, cfgProp, param, FALSE);
             switch (LOWORD(wParam))
             {
-                case ID_EDT_AUTH_PASS:
-                    ResetPasswordReveal(GetDlgItem(hwndDlg, ID_EDT_AUTH_PASS),
-                                        GetDlgItem(hwndDlg, ID_PASSWORD_REVEAL),
-                                        wParam);
-
-                /* fall through */
                 case ID_EDT_AUTH_USER:
+                case ID_EDT_AUTH_PASS:
                 case ID_EDT_AUTH_CHALLENGE:
                     if (HIWORD(wParam) == EN_UPDATE)
                     {
@@ -746,9 +746,7 @@ UserAuthDialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
                                         GetDlgItem(hwndDlg, ID_EDT_AUTH_CHALLENGE))));
                         EnableWindow(GetDlgItem(hwndDlg, IDOK), enableOK);
                     }
-                    AutoCloseCancel(hwndDlg); /* user interrupt */
-                    break;
-
+                    __fallthrough;
                 case ID_EDT_AUTH_TOTP:
                 case ID_EDT_AUTH_OTP:
                     AutoCloseCancel(hwndDlg); /* user interrupt */
@@ -872,9 +870,9 @@ UserAuthDialogFunc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
                     return TRUE;
 
                 case ID_PASSWORD_REVEAL: /* password reveal symbol clicked */
-                    ChangePasswordVisibility(GetDlgItem(hwndDlg, ID_EDT_AUTH_PASS),
-                                             GetDlgItem(hwndDlg, ID_PASSWORD_REVEAL),
-                                             wParam);
+                    ChangePasswordVisibility2(wParam, (HWND)lParam,
+                                              GetDlgItem(hwndDlg, ID_EDT_AUTH_PASS),
+                                              GetDlgItem(hwndDlg, ID_EDT_AUTH_TOTP));
                     return TRUE;
             }
             break;

@@ -1323,7 +1323,6 @@ ResetPasswordReveal(HWND edit, HWND btn, WPARAM wParam)
     }
 
     /* set the password field to be masked as a sane default */
-    SendMessage(edit, EM_SETPASSWORDCHAR, (WPARAM)'*', 0);
     SendMessage(btn, STM_SETIMAGE, (WPARAM)IMAGE_ICON, (LPARAM)LoadLocalizedSmallIcon(ID_ICO_EYE));
 
     /* if password is not masked on init, disable reveal "button" */
@@ -1348,8 +1347,13 @@ ResetPasswordReveal(HWND edit, HWND btn, WPARAM wParam)
  *         btn    handle to the control that toggles the reveal
  *         wParam action being handled
  */
+void ChangePasswordVisibility(HWND edit, HWND btn, WPARAM wParam)
+{
+    ChangePasswordVisibility2(wParam, btn, edit, NULL);
+}
+
 void
-ChangePasswordVisibility(HWND edit, HWND btn, WPARAM wParam)
+ChangePasswordVisibility2(WPARAM wParam, HWND btn, HWND edit, HWND edit2)
 {
     if (!edit || !btn)
     {
@@ -1357,22 +1361,22 @@ ChangePasswordVisibility(HWND edit, HWND btn, WPARAM wParam)
     }
     if (HIWORD(wParam) == STN_CLICKED)
     {
-        if (SendMessage(edit, EM_GETPASSWORDCHAR, 0, 0) == 0) /* currently visible */
+        UINT icon;
+        WPARAM pwd = SendMessage(edit, EM_GETPASSWORDCHAR, 0, 0);
+        if (pwd == 0) /* currently visible */
         {
-            SendMessage(edit, EM_SETPASSWORDCHAR, (WPARAM)'*', 0);
-            SendMessage(
-                btn, STM_SETIMAGE, (WPARAM)IMAGE_ICON, (LPARAM)LoadLocalizedSmallIcon(ID_ICO_EYE));
+            pwd = '*';
+            icon = ID_ICO_EYE;
         }
         else
         {
-            SendMessage(edit, EM_SETPASSWORDCHAR, 0, 0);
-            SendMessage(btn,
-                        STM_SETIMAGE,
-                        (WPARAM)IMAGE_ICON,
-                        (LPARAM)LoadLocalizedSmallIcon(ID_ICO_EYESTROKE));
+            pwd = '\0';
+            icon = ID_ICO_EYESTROKE;
         }
-        InvalidateRect(
-            edit, NULL, TRUE); /* without this the control doesn't seem to get redrawn promptly */
+        SendMessage(edit, EM_SETPASSWORDCHAR, pwd, 0);
+        if (edit2) SendMessage(edit2, EM_SETPASSWORDCHAR, pwd, 0);
+        SendMessage(btn, STM_SETIMAGE, (WPARAM)IMAGE_ICON, (LPARAM)LoadLocalizedSmallIcon(icon));
+        InvalidateRect(edit, NULL, TRUE); /* without this the control doesn't seem to get redrawn promptly */
     }
 }
 

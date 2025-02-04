@@ -185,6 +185,7 @@ bool GetRandomPassword(char *buf, size_t len);
 void ResetPasswordReveal(HWND edit, HWND btn, WPARAM wParam);
 
 void ChangePasswordVisibility(HWND edit, HWND btn, WPARAM wParam);
+void ChangePasswordVisibility2(WPARAM wParam, HWND btn, HWND edit, HWND edit2);
 
 /**
  * Compare two paths by checking whether they point to the
