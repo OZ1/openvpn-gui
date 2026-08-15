@@ -3,5 +3,6 @@
   "version-string": "0.0.1",
   "dependencies": [
     "json-c"
-  ]
+  ],
+  "builtin-baseline": "d99b6930b920d85dd4e1edbac37ecb3f354185c0"
 }
